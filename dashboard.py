@@ -1,95 +1,86 @@
 import tkinter as tk
-from PIL import Image, ImageTk
 import os
+from PIL import Image, ImageTk
+from typing import Any
+
+photo: Any = ImageTk
+
+
+# Lokasi file data dan foto
+DATA_PATH = "data/profil.txt"
 PHOTO_PATH = "images/foto_pengguna.png"
 DEFAULT_PHOTO = "images/default_photo.png"
 
-# ...
-# Di bagian tampilan profil:
+# Fungsi baca profil dengan format key-value
+def baca_profil():
+    profil = {}
+    if os.path.exists(DATA_PATH):
+        with open(DATA_PATH, "r") as f:
+            for baris in f:
+                if ": " in baris:
+                    key, value = baris.strip().split(": ", 1)
+                    profil[key] = value
+    return profil
 
-if os.path.exists(PHOTO_PATH):
-    foto_img = Image.open(PHOTO_PATH).resize((100, 100))
-else:
-    foto_img = Image.open(DEFAULT_PHOTO).resize((100, 100))
+# Fungsi buka file lain
+def buka_file(nama_file):
+    os.system(f"python {nama_file}")
 
-foto_tk = ImageTk.PhotoImage(foto_img)
-tk.Label( image=foto_tk, bg="#1f3a56").pack(side="left", padx=20)
+# Fungsi untuk menampilkan dashboard
+def tampilkan_dashboard():
+    profil = baca_profil()
 
-# Paths
-LOGO_PATH = "images/logo.png"
-PHOTO_PATH = "images/foto_pengguna.png"
-DEFAULT_PHOTO = "images/default_photo.png"
-ICONS = {
-    "Absensi": "images/absensi_icon.png",
-    "Profil": "images/profil_icon.png",
-    "Kegiatan": "images/kegiatan_icon.png",
-    "Informasi": "images/informasi_icon.png"
-}
+    root = tk.Tk()
+    root.title("Dashboard")
+    root.geometry("800x600")
 
+    # ===== HEADER =====
+    tk.Label(root, text="CV. DESAIN KREASI SUPPLIER", font=("Arial", 18, "bold"), fg="purple").pack(pady=10)
+    tk.Label(root, text="GENERAL SUPPLIER, HEAVY EQUIPMENT, MANPOWER SUPPLY, RENTAL SCAFFOLDING", font=("Arial", 10)).pack()
+    tk.Label(root, text="ABSENSI", font=("Arial", 14, "bold")).pack(pady=10)
 
-# Fungsi buka modul (sementara hanya print)
-def buka_menu(menu):
-    print(f"Membuka {menu}")
+    # ===== PROFIL KOTAK =====
+    frame = tk.Frame(root, bg="#1e3a5f", padx=20, pady=20)
+    frame.pack(pady=10)
 
+    try:
+        image = Image.open(profil.get("Foto", DEFAULT_PHOTO)).resize((100, 100))
+        photo = ImageTk.PhotoImage(image)
+        label_foto = tk.Label(frame, image=photo)
+        label_foto.image = photo
+        label_foto.grid(row=0, column=0, rowspan=3, padx=10)
+    except:
+        label_foto = tk.Label(frame, text="No Image", bg="#ccc", width=12, height=6)
+        label_foto.grid(row=0, column=0, rowspan=3, padx=10)
 
-# Setup GUI
-root = tk.Tk()
-root.title("Dashboard Absensi")
-root.geometry("800x600")
-root.configure(bg="white")
+    tk.Label(frame, text=profil.get("Nama", "Belum diisi"), font=("Arial", 14, "bold"), fg="white", bg="#1e3a5f").grid(row=0, column=1, sticky="w")
+    tk.Label(frame, text=profil.get("Jabatan", "Belum diisi"), font=("Arial", 10), fg="white", bg="#1e3a5f").grid(row=1, column=1, sticky="w")
+    tk.Label(frame, text=profil.get("Lokasi", "Belum diisi"), font=("Arial", 10), fg="white", bg="#1e3a5f").grid(row=2, column=1, sticky="w")
 
-# ================= Header ==================
-header_frame = tk.Frame(root, bg="white")
-header_frame.pack(pady=10)
+    # ===== MENU =====
+    menu_frame = tk.Frame(root)
+    menu_frame.pack(pady=20)
 
-logo_img = Image.open(LOGO_PATH).resize((100, 100))
-logo_tk = ImageTk.PhotoImage(logo_img)
-tk.Label(header_frame, image=logo_tk, bg="white").pack(side="left", padx=10)
+    def buat_menu(icon_path, label, command):
+        icon = Image.open(icon_path).resize((64, 64))
+        icon_tk = ImageTk.PhotoImage(icon)
+        btn_frame = tk.Frame(menu_frame)
+        btn_frame.pack(side="left", padx=20)
 
-tk.Label(header_frame,
-         text="CV. DESAIN KREASI SUPPLIER\nGENERAL SUPPLIER, HEAVY EQUIPMENT,\nMANPOWER SUPPLY, RENTAL SCAFFOLDING",
-         font=("Arial", 14, "bold"), bg="white", fg="purple", justify="left").pack(side="left")
+        btn = tk.Button(btn_frame, image=icon_tk, command=command, bd=0)
+        btn.image = icon_tk  # agar gambar tidak hilang
+        btn.pack()
 
-# ================= Judul ==================
-tk.Label(root, text="ABSENSI", font=("Arial", 18, "bold"), bg="white").pack(pady=10)
+        tk.Label(btn_frame, text=label).pack()
 
-# ================= Profil ==================
-profil_frame = tk.Frame(root, bg="#1f3a56", padx=20, pady=20)
-profil_frame.pack(pady=10, fill="x")
+    # Buat tombol menu
+    buat_menu("images/absensi_icon.png", "Absensi", lambda: buka_file("absensi.py"))
+    buat_menu("images/profil_icon.png", "Profil", lambda: buka_file("profil.py"))
+    buat_menu("images/kegiatan_icon.png", "Kegiatan", lambda: buka_file("kegiatan.py"))
+    buat_menu("images/informasi_icon.png", "Informasi", lambda: buka_file("informasi.py"))
 
-# Foto profil
-if os.path.exists(PHOTO_PATH):
-    foto_img = Image.open(PHOTO_PATH).resize((100, 100))
-else:
-    foto_img = Image.open(DEFAULT_PHOTO).resize((100, 100))
-foto_tk = ImageTk.PhotoImage(foto_img)
-tk.Label(profil_frame, image=foto_tk, bg="#1f3a56").pack(side="left", padx=20)
+    root.mainloop()
 
-# Data user
-tk.Label(profil_frame, text="Prof. Ir. Dr. H. joko widodo", font=("Arial", 14, "bold"),
-         fg="white", bg="#1f3a56").pack(anchor="w")
-tk.Label(profil_frame, text="Mantan presiden indonesia", font=("Arial", 12),
-         fg="white", bg="#1f3a56").pack(anchor="w")
-tk.Label(profil_frame, text="Solo, indonesia", font=("Arial", 12),
-         fg="white", bg="#1f3a56").pack(anchor="w")
-
-# ================= Menu Icons ==================
-menu_frame = tk.Frame(root, bg="white")
-menu_frame.pack(pady=30)
-
-for idx, (menu, icon_path) in enumerate(ICONS.items()):
-    icon_img = Image.open(icon_path).resize((80, 80))
-    icon_tk = ImageTk.PhotoImage(icon_img)
-
-
-    def make_command(m=menu):
-        return lambda: buka_menu(m)
-
-
-    btn = tk.Button(menu_frame, image=icon_tk, bd=0, command=make_command(), bg="white", activebackground="white")
-    btn.image = icon_tk  # simpan referensi
-    btn.grid(row=0, column=idx, padx=20)
-
-    tk.Label(menu_frame, text=menu, bg="white", font=("Arial", 10, "bold")).grid(row=1, column=idx)
-
-root.mainloop()
+# Jalankan hanya jika file ini langsung dijalankan
+if __name__ == "__main__":
+    tampilkan_dashboard()
