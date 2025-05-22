@@ -1,0 +1,30 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# PyCharm project settings
+.idea/
+*.iml
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Cache / logs / env
+*.log
+.env
+
+# Haarcascade & face data (opsional)
+faces/
+haarcascade/
+
+# Jangan abaikan file penting di data
+# (hapus baris ini jika ingin abaikan file *.txt)
+# data/*.txt
+
