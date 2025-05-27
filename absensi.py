@@ -1,97 +1,95 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import messagebox
 from datetime import datetime
 import os
 import cv2
 
-# Load Haar Cascade buat deteksi wajah
+# Path file dan Haar Cascade
+DATA_ABSEN_PATH = "data/absensi.txt"
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-def check_in_manual():
+# Fungsi Check-in Manual
+def check_in_manual(status_label):
     now = datetime.now()
-    with open("data/absensi.txt", "a") as file:
+    with open(DATA_ABSEN_PATH, "a") as file:
         file.write(f"{now.strftime('%Y-%m-%d')},{now.strftime('%H:%M:%S')},Manual\n")
     status_label.config(text="✅ Anda sudah Check-in Manual")
 
-def lihat_riwayat():
-    if os.path.exists("data/absensi.txt"):
-        with open("data/absensi.txt", "r") as file:
-            data = file.read()
-        riwayat = tk.Toplevel(root)
-        riwayat.title("Riwayat Absen")
-        tk.Label(riwayat, text=data).pack()
-    else:
-        status_label.config(text="❌ Belum ada data absensi.")
+# Fungsi Check-in Face ID
+def check_in_faceid(status_label):
+    cap = cv2.VideoCapture(0)
+    success = False
 
-def registrasi_wajah():
-    cam = cv2.VideoCapture(0)
-    ret, frame = cam.read()
-    if ret:
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        if len(faces) > 0:
-            nama_file = filedialog.asksaveasfilename(initialdir="faces", defaultextension=".jpg", filetypes=[("JPEG", "*.jpg")])
-            if nama_file:
-                cv2.imwrite(nama_file, frame)
-                status_label.config(text="✅ Wajah berhasil diregistrasi.")
-        else:
-            status_label.config(text="❌ Tidak ada wajah terdeteksi.")
-    else:
-        status_label.config(text="❌ Kamera gagal terbuka.")
-    cam.release()
+
+        # Gambar kotak di wajah
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            success = True
+
+        cv2.imshow('Deteksi Wajah - Tekan Q untuk Check-in', frame)
+
+        # Tekan Q untuk keluar dan simpan absensi
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
     cv2.destroyAllWindows()
 
-def check_in_face_id():
-    # Ambil wajah dari webcam
-    cam = cv2.VideoCapture(0)
-    ret, frame = cam.read()
-    cam.release()
-
-    if not ret:
-        status_label.config(text="❌ Gagal membuka kamera.")
-        return
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-
-    if len(faces) > 0:
-        # Misal kita anggap berhasil karena ada wajah terdeteksi
+    if success:
         now = datetime.now()
-        with open("data/absensi.txt", "a") as file:
+        with open(DATA_ABSEN_PATH, "a") as file:
             file.write(f"{now.strftime('%Y-%m-%d')},{now.strftime('%H:%M:%S')},FaceID\n")
-        status_label.config(text="✅ Check-in Face ID berhasil.")
-        cv2.imshow("Wajah Terdeteksi", frame)
-        cv2.waitKey(2000)
-        cv2.destroyAllWindows()
+        status_label.config(text="✅ Anda sudah Check-in dengan Face ID")
+        messagebox.showinfo("Berhasil", "Check-in dengan Face ID berhasil!")
     else:
-        status_label.config(text="❌ Tidak ditemukan wajah.")
-        cv2.imshow("Tidak Ada Wajah", frame)
-        cv2.waitKey(2000)
-        cv2.destroyAllWindows()
+        messagebox.showwarning("Gagal", "Wajah tidak terdeteksi!")
 
-def logout():
-    root.destroy()
-    import main
-    main.tampilkan_login()  # pastikan login kamu pakai fungsi ini
+# Fungsi Lihat Riwayat
+def lihat_riwayat():
+    if os.path.exists(DATA_ABSEN_PATH):
+        with open(DATA_ABSEN_PATH, "r") as file:
+            return file.readlines()
+    else:
+        return ["Belum ada riwayat absensi."]
 
-# GUI
-root = tk.Tk()
-root.title("Menu Absensi")
-root.geometry("800x500")
-root.configure(bg="lightblue")
+# Fungsi utama GUI absensi
+def tampilkan_absensi():
+    root = tk.Tk()
+    root.title("Absensi")
+    root.geometry("400x450")
 
-hari = datetime.now().strftime("%A, %d %B %Y")
-jam = datetime.now().strftime("%H:%M")
+    frame = tk.Frame(root, bg="#f0f0f0")
+    frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-tk.Label(root, text=f"{hari} | {jam}", font=("Helvetica", 16), bg="lightblue").pack(pady=10)
+    status_label = tk.Label(frame, text="Status: Belum Check-in", font=("Arial", 12), bg="#f0f0f0")
+    status_label.pack(pady=10)
 
-tk.Button(root, text="✅ Check-in Manual", width=30, command=check_in_manual).pack(pady=5)
-tk.Button(root, text="👤 Registrasi Wajah", width=30, command=registrasi_wajah).pack(pady=5)
-tk.Button(root, text="🤳 Check-in dengan Face ID", width=30, command=check_in_face_id).pack(pady=5)
-tk.Button(root, text="📊 Lihat Riwayat Absen", width=30, command=lihat_riwayat).pack(pady=5)
-tk.Button(root, text="🚪 Logout", width=30, command=logout, bg="red", fg="white").pack(pady=10)
+    btn_manual = tk.Button(frame, text="Check-in Manual", command=lambda: check_in_manual(status_label))
+    btn_manual.pack(pady=10)
 
-status_label = tk.Label(root, text="", font=("Helvetica", 12), bg="lightblue")
-status_label.pack(pady=10)
+    btn_faceid = tk.Button(frame, text="Check-in Face ID", command=lambda: check_in_faceid(status_label))
+    btn_faceid.pack(pady=10)
 
-root.mainloop()
+    def tampilkan_riwayat():
+        data = lihat_riwayat()
+        riwayat_window = tk.Toplevel(root)
+        riwayat_window.title("Riwayat Absensi")
+        text_area = tk.Text(riwayat_window, width=50, height=15)
+        text_area.pack(padx=10, pady=10)
+        for baris in data:
+            text_area.insert(tk.END, baris)
+
+    btn_riwayat = tk.Button(frame, text="Lihat Riwayat", command=tampilkan_riwayat)
+    btn_riwayat.pack(pady=10)
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    tampilkan_absensi()
