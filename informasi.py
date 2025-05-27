@@ -33,6 +33,10 @@ def tampilkan_berita():
     else:
         berita_text.insert("1.0", "Belum ada berita.")
 
+def show_informasi(root):
+    # hapus tampilan sebelumnya
+    for widget in root.winfo_children():
+        widget.destroy()
 
 # GUI
 root = tk.Tk()
@@ -53,5 +57,6 @@ berita_text = tk.Text(root, height=20, width=70, state="disabled", bg="#f9f9f9")
 berita_text.pack(pady=5)
 
 tampilkan_berita()
+
 
 root.mainloop()
