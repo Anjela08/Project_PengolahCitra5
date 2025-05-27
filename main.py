@@ -1,34 +1,51 @@
 import tkinter as tk
-import subprocess
+from dashboard import show_dashboard
+from profil import show_profil
+from absensi import show_absensi
+from kegiatan import show_kegiatan
+from informasi import show_informasi
 
-def buka_absensi():
-    subprocess.Popen(["python", "absensi.py"])
+def main():
+    root = tk.Tk()
+    root.title("Aplikasi Absensi")
+    root.geometry("900x600")
+    root.configure(bg="white")
 
-def buka_profil():
-    subprocess.Popen(["python", "profil.py"])
+    # Frame untuk navigasi samping
+    nav_frame = tk.Frame(root, bg="#f0f0f0", width=200)
+    nav_frame.pack(side="left", fill="y")
 
-def buka_kegiatan():
-    subprocess.Popen(["python", "kegiatan.py"])
+    # Frame untuk konten utama
+    content_frame = tk.Frame(root, bg="white")
+    content_frame.pack(side="right", expand=True, fill="both")
 
-def buka_informasi():
-    subprocess.Popen(["python", "informasi.py"])
+    # Fungsi wrapper biar bisa switch halaman
+    def tampilkan_dashboard():
+        show_dashboard(content_frame)
 
-def keluar():
-    root.destroy()
+    def tampilkan_profil():
+        show_profil(content_frame)
 
-# GUI Launcher
-root = tk.Tk()
-root.title("Dashboard Aplikasi Absensi")
-root.geometry("400x400")
-root.configure(bg="lightblue")
+    def tampilkan_absensi():
+        show_absensi(content_frame)
 
-tk.Label(root, text="📋 Menu Utama", font=("Arial", 18), bg="lightblue").pack(pady=20)
+    def tampilkan_kegiatan():
+        show_kegiatan(content_frame)
 
-tk.Button(root, text="📅 Absensi", width=30, command=buka_absensi).pack(pady=5)
-tk.Button(root, text="👤 Profil", width=30, command=buka_profil).pack(pady=5)
-tk.Button(root, text="📸 Kegiatan", width=30, command=buka_kegiatan).pack(pady=5)
-tk.Button(root, text="📰 Informasi", width=30, command=buka_informasi).pack(pady=5)
+    def tampilkan_informasi():
+        show_informasi(content_frame)
 
-tk.Button(root, text="🚪 Keluar", width=30, bg="red", fg="white", command=keluar).pack(pady=20)
+    # Tombol navigasi
+    tk.Button(nav_frame, text="Dashboard", width=20, command=tampilkan_dashboard).pack(pady=10)
+    tk.Button(nav_frame, text="Profil", width=20, command=tampilkan_profil).pack(pady=10)
+    tk.Button(nav_frame, text="Absensi", width=20, command=tampilkan_absensi).pack(pady=10)
+    tk.Button(nav_frame, text="Kegiatan", width=20, command=tampilkan_kegiatan).pack(pady=10)
+    tk.Button(nav_frame, text="Informasi", width=20, command=tampilkan_informasi).pack(pady=10)
 
-root.mainloop()
+    # Tampilkan halaman pertama
+    tampilkan_dashboard()
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
