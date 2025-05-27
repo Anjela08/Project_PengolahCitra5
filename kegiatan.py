@@ -10,6 +10,12 @@ FOLDER_GAMBAR = "images/kegiatan/"
 # Pastikan folder kegiatan ada
 os.makedirs(FOLDER_GAMBAR, exist_ok=True)
 
+def show_kegiatan(root):
+    # hapus tampilan sebelumnya
+    for widget in root.winfo_children():
+        widget.destroy()
+
+
 
 def upload_gambar():
     file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
@@ -66,5 +72,6 @@ deskripsi_entry = tk.Text(root, height=5, width=50)
 deskripsi_entry.pack(pady=5)
 
 tk.Button(root, text="Simpan", command=simpan_kegiatan, bg="lightgreen").pack(pady=20)
+
 
 root.mainloop()
