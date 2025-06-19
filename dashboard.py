@@ -1,50 +1,72 @@
-import tkinter as tk
+import streamlit as st
+from PIL import Image
 import os
-from PIL import Image, ImageTk
+import absensi
 
 DATA_PATH = "data/profil.txt"
-PHOTO_PATH = "images/foto_pengguna.png"
 DEFAULT_PHOTO = "images/default_photo.png"
 
 def baca_profil():
-    profil = {}
+    profil_data = {}
     if os.path.exists(DATA_PATH):
         with open(DATA_PATH, "r") as f:
             for baris in f:
                 if ": " in baris:
                     key, value = baris.strip().split(": ", 1)
-                    profil[key] = value
-    return profil
+                    profil_data[key] = value
+    return profil_data
 
-def show_dashboard(root):
-    # Hapus tampilan lama
-    for widget in root.winfo_children():
-        widget.destroy()
+def tampilkan_dashboard():
+    profil_data = baca_profil()
 
-    profil = baca_profil()
+    # Logo perusahaan diperbesar otomatis
+    st.image("images/Logo.png", use_container_width=True)
+    st.divider()
 
-    # ===== HEADER =====
-    tk.Label(root, text="CV. DESAIN KREASI SUPPLIER", font=("Arial", 18, "bold"), fg="purple", bg="white").pack(pady=10)
-    tk.Label(root, text="GENERAL SUPPLIER, HEAVY EQUIPMENT, MANPOWER SUPPLY, RENTAL SCAFFOLDING", font=("Arial", 10), bg="white").pack()
-    tk.Label(root, text="ABSENSI", font=("Arial", 14, "bold"), bg="white").pack(pady=10)
+    # Profil pengguna
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        try:
+            image_path = profil_data.get("Foto", DEFAULT_PHOTO)
+            img = Image.open(image_path)
+            st.image(img, width=120)
+        except:
+            st.warning("Foto tidak tersedia.")
+    with col2:
+        with st.container():
+            st.subheader(profil_data.get('Nama Lengkap', 'Belum diisi'))
+            st.write("**Jabatan:**", profil_data.get('Jabatan', 'Belum diisi'))
+            st.write("**Lokasi:**", profil_data.get('Lokasi', 'Belum diisi'))
 
-    # ===== PROFIL KOTAK =====
-    frame = tk.Frame(root, bg="#1e3a5f", padx=20, pady=20)
-    frame.pack(pady=10)
+    st.divider()
 
-    try:
-        image = Image.open(profil.get("Foto", DEFAULT_PHOTO)).resize((100, 100))
-        photo = ImageTk.PhotoImage(image)
-        label_foto = tk.Label(frame, image=photo)
-        label_foto.image = photo
-        label_foto.grid(row=0, column=0, rowspan=3, padx=10)
-    except:
-        label_foto = tk.Label(frame, text="No Image", bg="#ccc", width=12, height=6)
-        label_foto.grid(row=0, column=0, rowspan=3, padx=10)
+    # Menu interaktif
+    st.subheader("Menu Utama")
+    col3, col4, col5, col6 = st.columns(4)
 
-    tk.Label(frame, text=profil.get("Nama", "Belum diisi"), font=("Arial", 14, "bold"), fg="white", bg="#1e3a5f").grid(row=0, column=1, sticky="w")
-    tk.Label(frame, text=profil.get("Jabatan", "Belum diisi"), font=("Arial", 10), fg="white", bg="#1e3a5f").grid(row=1, column=1, sticky="w")
-    tk.Label(frame, text=profil.get("Lokasi", "Belum diisi"), font=("Arial", 10), fg="white", bg="#1e3a5f").grid(row=2, column=1, sticky="w")
+    with col3:
+        st.image("images/absensi_icon.png", width=60)
+        if st.button("Absensi"):
+            import absensi
+            absensi.tampilkan_absensi()
 
-    # ===== MENU KOSONG (bisa diisi nanti) =====
-    tk.Label(root, text="Silakan pilih menu di sebelah kiri", bg="white", font=("Arial", 12)).pack(pady=30)
+    with col4:
+        st.image("images/profil_icon.png", width=60)
+        if st.button("Profil"):
+            import profil
+            profil.tampilkan_profil()
+
+    with col5:
+        st.image("images/kegiatan_icon.png", width=60)
+        if st.button("Kegiatan"):
+            import kegiatan
+            kegiatan.tampilkan_kegiatan()
+
+    with col6:
+        st.image("images/informasi_icon.png", width=60)
+        if st.button("Informasi"):
+            import informasi
+            informasi.tampilkan_informasi()
+
+    st.divider()
+    st.button("🚪 Logout")
