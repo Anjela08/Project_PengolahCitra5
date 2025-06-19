@@ -1,77 +1,70 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
-from PIL import Image, ImageTk
-from datetime import datetime
+import streamlit as st
+from PIL import Image
 import os
+from datetime import datetime
 
+# Folder dan file data
 DATA_PATH = "data/kegiatan.txt"
 FOLDER_GAMBAR = "images/kegiatan/"
-
-# Pastikan folder kegiatan ada
 os.makedirs(FOLDER_GAMBAR, exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
-def show_kegiatan(root):
-    # hapus tampilan sebelumnya
-    for widget in root.winfo_children():
-        widget.destroy()
+# ------------------- Fungsi Hapus Kegiatan ------------------- #
+def hapus_kegiatan(line_to_delete, path_gambar):
+    with open(DATA_PATH, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    lines = [line for line in lines if line.strip() != line_to_delete.strip()]
+    with open(DATA_PATH, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+    if os.path.exists(path_gambar):
+        os.remove(path_gambar)
 
+# ------------------- Fungsi Utama ------------------- #
+def tampilkan_kegiatan():
+    st.title("📸 KEGIATAN CV DESAIN KREASI SUPPLIER")
 
+    st.subheader("📝 Upload Kegiatan Baru")
+    uploaded_file = st.file_uploader("Pilih Gambar", type=["jpg", "jpeg", "png"])
+    deskripsi = st.text_area("Deskripsi Kegiatan")
 
-def upload_gambar():
-    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
-    if file_path:
-        nama_file = os.path.basename(file_path)
-        simpan_path = os.path.join(FOLDER_GAMBAR, nama_file)
-        with open(file_path, "rb") as src, open(simpan_path, "wb") as dst:
-            dst.write(src.read())
-        gambar_var.set(nama_file)
-        preview_gambar(simpan_path)
+    if st.button("✅ Simpan Kegiatan"):
+        if uploaded_file and deskripsi.strip():
+            tanggal = datetime.now().strftime("%A, %d %B %Y")
+            nama_file = uploaded_file.name
+            simpan_path = os.path.join(FOLDER_GAMBAR, nama_file)
 
+            with open(simpan_path, "wb") as f:
+                f.write(uploaded_file.read())
 
-def preview_gambar(path):
-    img = Image.open(path).resize((200, 200))
-    img_tk = ImageTk.PhotoImage(img)
-    gambar_label.config(image=img_tk)
-    gambar_label.image = img_tk
+            with open(DATA_PATH, "a", encoding="utf-8") as f:
+                f.write(f"{tanggal}|{nama_file}|{deskripsi.strip()}\n")
 
+            st.success("✔️ Kegiatan berhasil disimpan.")
+        else:
+            st.error("⚠️ Gambar dan deskripsi harus diisi!")
 
-def simpan_kegiatan():
-    tanggal = datetime.now().strftime("%Y-%m-%d")
-    gambar = gambar_var.get()
-    deskripsi = deskripsi_entry.get("1.0", "end").strip()
+    st.markdown("---")
+    st.subheader("📂 Riwayat Kegiatan")
 
-    if not gambar or not deskripsi:
-        messagebox.showerror("Error", "Gambar dan deskripsi harus diisi!")
-        return
+    if os.path.exists(DATA_PATH):
+        with open(DATA_PATH, "r", encoding="utf-8") as f:
+            lines = f.readlines()
 
-    with open(DATA_PATH, "a") as file:
-        file.write(f"{tanggal}|{gambar}|{deskripsi}\n")
-    messagebox.showinfo("Berhasil", "✅ Kegiatan disimpan.")
-    deskripsi_entry.delete("1.0", "end")
-    gambar_var.set("")
-    gambar_label.config(image="")
-
-
-# GUI
-root = tk.Tk()
-root.title("Kegiatan")
-root.geometry("500x600")
-root.configure(bg="white")
-
-tk.Label(root, text="Upload Kegiatan", font=("Arial", 18), bg="white").pack(pady=10)
-
-gambar_var = tk.StringVar()
-
-gambar_label = tk.Label(root, bg="white")
-gambar_label.pack()
-
-tk.Button(root, text="Upload Gambar", command=upload_gambar).pack(pady=10)
-
-tk.Label(root, text="Deskripsi Kegiatan:", bg="white").pack()
-deskripsi_entry = tk.Text(root, height=5, width=50)
-deskripsi_entry.pack(pady=5)
-
-tk.Button(root, text="Simpan", command=simpan_kegiatan, bg="lightgreen").pack(pady=20)
-
-
-root.mainloop()
+        for line in reversed(lines):
+            try:
+                tanggal, gambar, deskripsi = line.strip().split("|", 2)
+                path_gambar = os.path.join(FOLDER_GAMBAR, gambar)
+                if os.path.exists(path_gambar):
+                    cols = st.columns([1, 4])
+                    with cols[0]:
+                        st.image(path_gambar, width=120)
+                    with cols[1]:
+                        st.markdown(f"**{tanggal}**")
+                        st.write(deskripsi)
+                        if st.button(f"🗑 Hapus - {gambar}"):
+                            hapus_kegiatan(line, path_gambar)
+                            st.rerun()
+            except:
+                continue
+    else:
+        st.info("Belum ada kegiatan yang tercatat.")
