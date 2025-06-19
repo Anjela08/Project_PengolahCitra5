@@ -1,62 +1,62 @@
-import tkinter as tk
-from tkinter import messagebox
-from datetime import datetime
+import streamlit as st
 import os
+from datetime import datetime
+
+# Konfigurasi halaman (pindahkan ini ke app.py jika gabung multi-modul)
+# st.set_page_config(page_title="Informasi CV DESAIN KREASI SUPPLIER", layout="wide")
 
 DATA_FILE = "data/informasi.txt"
+os.makedirs("data", exist_ok=True)
 
+# -------------------- Fungsi Baca Data -------------------- #
+def baca_data_info():
+    if not os.path.exists(DATA_FILE):
+        return []
+    with open(DATA_FILE, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+    data_info = []
+    for line in lines:
+        try:
+            tanggal, judul, isi = line.strip().split("|", 2)
+            data_info.append({"tanggal": tanggal, "judul": judul, "isi": isi})
+        except:
+            continue
+    return data_info
 
-def simpan_berita():
-    tanggal = datetime.now().strftime("%Y-%m-%d %H:%M")
-    isi = berita_entry.get("1.0", "end").strip()
+# -------------------- Fungsi Simpan Info -------------------- #
+def simpan_info(judul, isi):
+    tanggal = datetime.now().strftime("%A, %d %B %Y")
+    with open(DATA_FILE, "a", encoding="utf-8") as file:
+        file.write(f"{tanggal}|{judul}|{isi}\n")
 
-    if not isi:
-        messagebox.showerror("Error", "Berita tidak boleh kosong!")
-        return
+# -------------------- Tampilan Utama -------------------- #
+def tampilkan_informasi():
+    st.markdown("<h1 style='color:#0077B6;'>📢 Informasi Umum</h1>", unsafe_allow_html=True)
+    st.markdown("💬 Berikut adalah pengumuman dan informasi penting perusahaan:")
 
-    with open(DATA_FILE, "a") as file:
-        file.write(f"{tanggal} | {isi}\n")
+    with st.expander("📝 Tambah Informasi Baru", expanded=False):
+        with st.form("form_info"):
+            judul_baru = st.text_input("🖋️ Judul Informasi")
+            isi_baru = st.text_area("📄 Isi Informasi")
+            submitted = st.form_submit_button("✅ Simpan")
+            if submitted:
+                if judul_baru.strip() and isi_baru.strip():
+                    simpan_info(judul_baru.strip(), isi_baru.strip())
+                    st.success("✅ Informasi berhasil ditambahkan dan akan tampil untuk semua user.")
+                    st.experimental_rerun()
+                else:
+                    st.warning("⚠️ Judul dan isi tidak boleh kosong.")
 
-    berita_entry.delete("1.0", "end")
-    tampilkan_berita()
-    messagebox.showinfo("Berhasil", "Berita disimpan!")
+    st.markdown("---")
+    st.subheader("📂 Daftar Informasi Tersedia")
 
-
-def tampilkan_berita():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as file:
-            semua_berita = file.read()
-        berita_text.config(state="normal")
-        berita_text.delete("1.0", "end")
-        berita_text.insert("1.0", semua_berita)
-        berita_text.config(state="disabled")
+    data_info = baca_data_info()
+    if not data_info:
+        st.info("📭 Belum ada informasi yang tersedia.")
     else:
-        berita_text.insert("1.0", "Belum ada berita.")
-
-def show_informasi(root):
-    # hapus tampilan sebelumnya
-    for widget in root.winfo_children():
-        widget.destroy()
-
-# GUI
-root = tk.Tk()
-root.title("Informasi Penting")
-root.geometry("600x600")
-root.configure(bg="white")
-
-tk.Label(root, text="Tambah Berita Penting", font=("Arial", 18), bg="white").pack(pady=10)
-
-berita_entry = tk.Text(root, height=5, width=60)
-berita_entry.pack(pady=10)
-
-tk.Button(root, text="Simpan Berita", command=simpan_berita, bg="lightblue").pack(pady=5)
-
-tk.Label(root, text="📢 Semua Berita:", font=("Arial", 14), bg="white").pack(pady=10)
-
-berita_text = tk.Text(root, height=20, width=70, state="disabled", bg="#f9f9f9")
-berita_text.pack(pady=5)
-
-tampilkan_berita()
-
-
-root.mainloop()
+        for info in reversed(data_info):  # terbaru di atas
+            with st.container():
+                st.markdown(f"### 📰 {info['judul']}")
+                st.caption(f"📅 {info['tanggal']}")
+                st.write(info['isi'])
+                st.markdown("---")
