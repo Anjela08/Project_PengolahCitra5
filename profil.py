@@ -1,81 +1,125 @@
-import tkinter as tk
-from tkinter import filedialog
-from PIL import Image, ImageTk
+import streamlit as st
+from PIL import Image, ImageDraw, ImageFont
 import os
 
+# Path dan konfigurasi awal
 DATA_PATH = "data/profil.txt"
 PHOTO_PATH = "images/foto_pengguna.png"
+DEFAULT_PHOTO = "images/default_photo.png"
 
-def show_profil(root):
-    def simpan_data():
-        nama = nama_var.get()
-        jabatan = jabatan_var.get()
-        lokasi = lokasi_var.get()
+# Buat folder jika belum ada
+os.makedirs("images", exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
-        with open(DATA_PATH, "w") as file:
-            file.write(f"Nama: {nama}\n")
-            file.write(f"Jabatan: {jabatan}\n")
-            file.write(f"Lokasi: {lokasi}\n")
-            file.write(f"Foto: {PHOTO_PATH if os.path.exists(PHOTO_PATH) else ''}\n")
+# Buat foto default jika belum ada
+if not os.path.exists(DEFAULT_PHOTO):
+    img = Image.new("RGB", (150, 150), color=(180, 200, 240))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+    text = "No Photo"
+    w, h = draw.textsize(text, font=font)
+    draw.text(((150 - w) / 2, (150 - h) / 2), text, fill=(0, 0, 0), font=font)
+    img.save(DEFAULT_PHOTO)
 
-        status_label.config(text="✅ Data berhasil disimpan")
+def tampilkan_profil():
+    st.title("Profil Pengguna")
 
-    def upload_foto():
-        file_path = filedialog.askopenfilename(title="Pilih Foto", filetypes=[("Image Files", "*.jpg *.png")])
-        if file_path:
-            image = Image.open(file_path)
-            image.save(PHOTO_PATH)
-            load_foto()
-            status_label.config(text="✅ Foto berhasil di-upload")
+    # Status simpan
+    status = st.empty()
 
-    def load_data():
-        if os.path.exists(DATA_PATH):
-            with open(DATA_PATH, "r") as file:
-                for line in file:
-                    if line.startswith("Nama:"):
-                        nama_var.set(line.split(":", 1)[1].strip())
-                    elif line.startswith("Jabatan:"):
-                        jabatan_var.set(line.split(":", 1)[1].strip())
-                    elif line.startswith("Lokasi:"):
-                        lokasi_var.set(line.split(":", 1)[1].strip())
-        load_foto()
+    # Foto pengguna
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        foto_path = PHOTO_PATH if os.path.exists(PHOTO_PATH) else DEFAULT_PHOTO
+        st.image(foto_path, width=150)
+        uploaded_file = st.file_uploader("📸 Upload Foto", type=["jpg", "jpeg", "png"])
+        if uploaded_file is not None:
+            try:
+                img = Image.open(uploaded_file).resize((150, 150))
+                img.save(PHOTO_PATH)
+                status.success("✅ Foto berhasil di-upload")
+            except Exception as e:
+                status.error(f"❌ Gagal memuat foto: {str(e)}")
 
-    def load_foto():
+    # Load data profil jika ada
+    profil_data = {}
+    if os.path.exists(DATA_PATH):
+        with open(DATA_PATH, "r", encoding="utf-8") as file:
+            for line in file:
+                if ":" in line:
+                    key, value = line.strip().split(":", 1)
+                    profil_data[key] = value.strip()
+
+    def input_field(label):
+        return st.text_input(label, profil_data.get(label, ""))
+
+    # Section: Informasi Pribadi
+    st.subheader("1. Informasi Pribadi")
+    nama = input_field("Nama Lengkap")
+    ttl = input_field("Tempat, Tanggal Lahir")
+    jk = input_field("Jenis Kelamin")
+    alamat = input_field("Alamat")
+    telepon = input_field("Nomor Telepon")
+    email = input_field("Email")
+    status_perkawinan = input_field("Status Perkawinan")
+    kewarganegaraan = input_field("Kewarganegaraan")
+
+    # Section: Pekerjaan
+    st.subheader("2. Informasi Pekerjaan")
+    jabatan = input_field("Jabatan")
+    divisi = input_field("Departemen / Divisi")
+    nik = input_field("Nomor Induk Karyawan (NIK)")
+    tgl_masuk = input_field("Tanggal Masuk Kerja")
+    status_karyawan = input_field("Status Karyawan")
+    lokasi = input_field("Lokasi")
+
+    # Section: Pendidikan
+    st.subheader("3. Pendidikan")
+    jenjang = input_field("Jenjang Pendidikan Terakhir")
+    institusi = input_field("Nama Institusi")
+    jurusan = input_field("Jurusan")
+    lulus = input_field("Tahun Lulus")
+
+    # Section: Pengalaman Kerja
+    st.subheader("4. Pengalaman Kerja (jika ada)")
+    perusahaan = input_field("Nama Perusahaan")
+    jabatan_kerja = input_field("Jabatan (Pengalaman)")
+    lama = input_field("Lama Bekerja")
+    deskripsi = input_field("Deskripsi Pekerjaan")
+
+    # Section: Keahlian
+    st.subheader("5. Keterampilan / Keahlian")
+    bahasa = input_field("Bahasa yang Dikuasai")
+    keahlian = input_field("Keahlian Teknis")
+
+    if st.button("💾 Simpan Data"):
         try:
-            img = Image.open(PHOTO_PATH).resize((150, 150))
-        except:
-            img = Image.open("images/default_photo.png").resize((150, 150))
-        img_tk = ImageTk.PhotoImage(img)
-        foto_label.config(image=img_tk)
-        foto_label.image = img_tk  # biar gambar ga kehapus
-
-    # Hapus tampilan sebelumnya
-    for widget in root.winfo_children():
-        widget.destroy()
-
-    nama_var = tk.StringVar()
-    jabatan_var = tk.StringVar()
-    lokasi_var = tk.StringVar()
-
-    tk.Label(root, text="Profil", font=("Arial", 20), bg="white").pack(pady=10)
-
-    foto_label = tk.Label(root, bg="white")
-    foto_label.pack(pady=10)
-
-    tk.Button(root, text="Upload Foto", command=upload_foto).pack()
-
-    tk.Label(root, text="Nama", bg="white").pack(pady=5)
-    tk.Entry(root, textvariable=nama_var).pack()
-
-    tk.Label(root, text="Jabatan", bg="white").pack(pady=5)
-    tk.Entry(root, textvariable=jabatan_var).pack()
-
-    tk.Label(root, text="Lokasi", bg="white").pack(pady=5)
-    tk.Entry(root, textvariable=lokasi_var).pack()
-
-    tk.Button(root, text="Simpan Data", command=simpan_data).pack(pady=20)
-
-    status_label = tk.Label(root, text="", bg="white", fg="green")
-    status_label.pack()
-
-    load_data()
+            with open(DATA_PATH, "w", encoding="utf-8") as file:
+                file.write(f"Nama Lengkap: {nama}\n")
+                file.write(f"Tempat, Tanggal Lahir: {ttl}\n")
+                file.write(f"Jenis Kelamin: {jk}\n")
+                file.write(f"Alamat: {alamat}\n")
+                file.write(f"Nomor Telepon: {telepon}\n")
+                file.write(f"Email: {email}\n")
+                file.write(f"Status Perkawinan: {status_perkawinan}\n")
+                file.write(f"Kewarganegaraan: {kewarganegaraan}\n")
+                file.write(f"Jabatan: {jabatan}\n")
+                file.write(f"Departemen / Divisi: {divisi}\n")
+                file.write(f"Nomor Induk Karyawan (NIK): {nik}\n")
+                file.write(f"Tanggal Masuk Kerja: {tgl_masuk}\n")
+                file.write(f"Status Karyawan: {status_karyawan}\n")
+                file.write(f"Lokasi: {lokasi}\n")
+                file.write(f"Jenjang Pendidikan Terakhir: {jenjang}\n")
+                file.write(f"Nama Institusi: {institusi}\n")
+                file.write(f"Jurusan: {jurusan}\n")
+                file.write(f"Tahun Lulus: {lulus}\n")
+                file.write(f"Nama Perusahaan: {perusahaan}\n")
+                file.write(f"Jabatan (Pengalaman): {jabatan_kerja}\n")
+                file.write(f"Lama Bekerja: {lama}\n")
+                file.write(f"Deskripsi Pekerjaan: {deskripsi}\n")
+                file.write(f"Bahasa yang Dikuasai: {bahasa}\n")
+                file.write(f"Keahlian Teknis: {keahlian}\n")
+                file.write(f"Foto: {PHOTO_PATH if os.path.exists(PHOTO_PATH) else DEFAULT_PHOTO}\n")
+            status.success("✅ Data berhasil disimpan")
+        except Exception as e:
+            status.error(f"❌ Gagal menyimpan data: {str(e)}")
